@@ -4,6 +4,17 @@ if __name__ == "__main__":
 
 import math
 
+DistanceUnits2Meters : dict[str:float] = {'m'  :    1.0,
+                                          'km' : 1000.0,
+                                          'nm' : 1852.0,
+                                          'mi' : 1609.0}
+
+def ParseDistance(UserInput : str) -> float:
+  SpaceIndex = UserInput.find(' ')
+  Number = float(UserInput[0:SpaceIndex])
+  Unit = DistanceUnits2Meters[UserInput[SpaceIndex+1:].lower()]
+  return Number * Unit
+
 class Point:
   Latitude : float
   Longitude: float

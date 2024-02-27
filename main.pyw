@@ -67,6 +67,7 @@ def Inverse_Imp():
   except ValueError as InvalidCoord:
     TxtStartBear.delete(0, tkinter.END)
     TxtStartBear.insert(0,"INVALID PARAM")
+    messagebox.showerror(title="Inverse distance", message="Check origin and destination point information")
     return
   Route = Geodesy.InverseVincenty(OriginPoint=Origin, DestinationPoint=Dest, tol = 1e-24)
   TxtStartDist.delete(0,tkinter.END)
@@ -82,8 +83,9 @@ def Direct_Imp():
     Origin.Latitude     = math.radians(float(TxtStartLat.get()))
     Origin.Longitude    = math.radians(float(TxtStartLon.get()))
     Route.Bearing       = math.radians(float(TxtStartBear.get()))
-    Route.OrthoDistance = float(TxtStartDist.get())
+    Route.OrthoDistance = Geodesy.ParseDistance(TxtStartDist.get())
   except ValueError as InvalidCoord:
+    messagebox.showerror(title="Direct distance", message="Check origin point and route information")
     return
   Dest = Geodesy.DirectVincenty(OriginPoint= Origin, Route=Route, tol=1e-24)
   TxtDestLat.delete(0,tkinter.END)
@@ -233,7 +235,7 @@ CmdSearch1 = tkinter.Button(master=FrameStart, text="Search", font=DefaultFontTu
                             command=SearchPoint, image=SearchIcon, compound="l",state="disabled")
 CmdSearch1.grid(row=4,column=1)
 CmdDirect = tkinter.Button(master=FrameRoute, text= "Dir", font=DefaultFontTuple,
-                           image=DirectIcon, compound="l", command=Direct_Imp, state="disabled")
+                           image=DirectIcon, compound="l", command=Direct_Imp, state="active")
 CmdDirect.grid(row=4,column=0)
 CmdInverse = tkinter.Button(master=FrameRoute, text= "Inv",
                             font=DefaultFontTuple, command=Inverse_Imp,
