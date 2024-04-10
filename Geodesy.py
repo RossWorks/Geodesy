@@ -9,10 +9,19 @@ DistanceUnits2Meters : dict[str:float] = {'m'  :    1.0,
                                           'nm' : 1852.0,
                                           'mi' : 1609.0}
 
+Angle2RadConverter : dict[str:float] = {"°"   : math.radians(1),
+                                        "rad" : 1.0}
+
 def ParseDistance(UserInput : str) -> float:
   SpaceIndex = UserInput.find(' ')
   Number = float(UserInput[0:SpaceIndex])
   Unit = DistanceUnits2Meters[UserInput[SpaceIndex+1:].lower()]
+  return Number * Unit
+
+def ParseAngle(UserInput : str) -> float:
+  SpaceIndex = UserInput.find(' ')
+  Number = float(UserInput[0:SpaceIndex])
+  Unit = Angle2RadConverter[UserInput[SpaceIndex+1:].lower()]
   return Number * Unit
 
 class Point:
@@ -24,12 +33,14 @@ class Point:
     self.Longitude = 0
 
 class Route:
-  Bearing  : float
+  FwdAz  : float
   OrthoDistance : float
+  BackAz : float
 
   def __init__(self) -> None:
-    self.Bearing = 0
-    self.OrthoDistance = 0
+    self.FwdAz = 0.0
+    self.BackAz = 0.0
+    self.OrthoDistance = 0.0
 
 SemiMajorAxis : float = 6378137.0
 flattening    : float = 1/298.257223563
@@ -75,7 +86,8 @@ def InverseVincenty(OriginPoint : Point, DestinationPoint : Point, tol : float =
   alpha1 = math.atan2(cos_U2 * math.sin(Lambda), cos_U1 * sin_U2 - sin_U1 * cos_U2 * math.cos(Lambda))
   alpha2 = math.atan2(cos_U1*math.sin(Lambda), -1*sin_U1*cos_U2+cos_U1*sin_U2*math.cos(Lambda))
   output.OrthoDistance = s
-  output.Bearing = alpha1
+  output.FwdAz = alpha1
+  output.BackAz = alpha2
   return output
 
 def DirectVincenty(OriginPoint : Point, Route : Route, tol : float = 1e-12) -> Point:
@@ -86,11 +98,11 @@ def DirectVincenty(OriginPoint : Point, Route : Route, tol : float = 1e-12) -> P
   _2_sigma_m : float = 0.0
   counter: int = 0
   U1     : float = math.atan((1-flattening)*math.tan(OriginPoint.Latitude))
-  sigma1 : float = math.atan2(math.tan(U1), math.cos(Route.Bearing))
-  sin_a  : float = math.cos(U1)*math.sin(Route.Bearing)
+  sigma1 : float = math.atan2(math.tan(U1), math.cos(Route.FwdAz))
+  sin_a  : float = math.cos(U1)*math.sin(Route.FwdAz)
   u_2    : float = (1-math.pow(sin_a,2))*((math.pow(SemiMajorAxis,2))/(math.pow(SemiMinorAxis,2))-1)
   A      : float = 1 + u_2/16384*(4096+u_2*(-768+u_2*(320-175*u_2)))
-  B      : float = u_2/1024 * (256+u_2)
+  B      : float = u_2/1024 * (256+u_2*(-128 + u_2*(74 - 47*u_2)))
   sigma_mem = Route.OrthoDistance/(SemiMinorAxis*A)
   while counter < 500:
     _2_sigma_m = 2*sigma1+sigma_mem
@@ -100,13 +112,13 @@ def DirectVincenty(OriginPoint : Point, Route : Route, tol : float = 1e-12) -> P
       break
     sigma_mem = sigma
     counter += 1
-  output.Latitude = math.atan2(math.sin(U1)*math.cos(sigma) + math.cos(U1)*math.sin(sigma)*math.cos(Route.Bearing),
-                               (1-flattening)+math.sqrt(math.pow(math.sin(Route.Bearing),2) + math.pow(math.sin(U1)*math.sin(sigma) - math.cos(U1)*math.cos(sigma)*math.cos(Route.Bearing),2)))
-  lambda_ = math.atan2(math.sin(sigma)*math.sin(Route.Bearing),
-                       math.cos(U1)*math.cos(sigma) - math.sin(U1)*math.sin(sigma)*math.cos(Route.Bearing))
-  C = flattening/16 * math.pow(math.cos(Route.Bearing),2) * (4+flattening*(4-3*math.pow(math.cos(Route.Bearing),2)))
-  L = lambda_ - (1-C)*flattening*math.sin(Route.Bearing) * (sigma + C*math.sin(sigma)*(math.cos(_2_sigma_m) + C*math.cos(sigma)*(-1+2*math.pow(math.cos(_2_sigma_m),2))))
+  output.Latitude = math.atan2(math.sin(U1)*math.cos(sigma) + math.cos(U1)*math.sin(sigma)*math.cos(Route.FwdAz),
+                               (1-flattening)+math.sqrt(math.pow(math.sin(Route.FwdAz),2) + math.pow(math.sin(U1)*math.sin(sigma) - math.cos(U1)*math.cos(sigma)*math.cos(Route.FwdAz),2)))
+  lambda_ = math.atan2(math.sin(sigma)*math.sin(Route.FwdAz),
+                       math.cos(U1)*math.cos(sigma) - math.sin(U1)*math.sin(sigma)*math.cos(Route.FwdAz))
+  C = flattening/16 * math.pow(math.cos(Route.FwdAz),2) * (4+flattening*(4-3*math.pow(math.cos(Route.FwdAz),2)))
+  L = lambda_ - (1-C)*flattening*math.sin(Route.FwdAz) * (sigma + C*math.sin(sigma)*(math.cos(_2_sigma_m) + C*math.cos(sigma)*(-1+2*math.pow(math.cos(_2_sigma_m),2))))
   output.Longitude = OriginPoint.Longitude + L
-  alpha2 = math.atan2(math.sin(Route.Bearing),
-                      -math.sin(U1)*math.sin(sigma) + math.cos(U1)*math.cos(sigma)*math.cos(Route.Bearing))
+  alpha2 = math.atan2(math.sin(Route.FwdAz),
+                      -math.sin(U1)*math.sin(sigma) + math.cos(U1)*math.cos(sigma)*math.cos(Route.FwdAz))
   return output

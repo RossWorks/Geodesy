@@ -3,7 +3,7 @@ import tkinter, Geodesy, math, DbManager
 from tkinter import messagebox, filedialog, ttk
 
 padValue = 10
-
+CentralWidth = 10
 ComputationMethodsList = ["Vincenty" , "Sodano", "Sphere", "Flat Earth"]
 
 DefaultFontTuple = ("B612 mono", 15, "normal")
@@ -58,7 +58,7 @@ def ConfirmSelection2():
 def Inverse_Imp():
   Origin = Geodesy.Point()
   Dest   = Geodesy.Point()
-  Route  : Geodesy.Route
+  Route  = Geodesy.Route()
   try:
     Origin.Latitude  = math.radians(float(TxtStartLat.get()))
     Origin.Longitude = math.radians(float(TxtStartLon.get()))
@@ -73,7 +73,9 @@ def Inverse_Imp():
   TxtStartDist.delete(0,tkinter.END)
   TxtStartDist.insert(0,str("{:.2f}".format(Route.OrthoDistance/1000)) + " km")
   TxtStartBear.delete(0,tkinter.END)
-  TxtStartBear.insert(0,str("{:.2f}".format(math.degrees(Route.Bearing))) + "°")
+  TxtStartBear.insert(0,str("{:.2f}".format(math.degrees(Route.FwdAz))) + "°")
+  TxtFinalAz.delete(0,tkinter.END)
+  TxtFinalAz.insert(0,str("{:.2f}".format(math.degrees(Route.BackAz))) + "°")
 
 def Direct_Imp():
   Origin = Geodesy.Point()
@@ -82,7 +84,7 @@ def Direct_Imp():
   try:
     Origin.Latitude     = math.radians(float(TxtStartLat.get()))
     Origin.Longitude    = math.radians(float(TxtStartLon.get()))
-    Route.Bearing       = math.radians(float(TxtStartBear.get()))
+    Route.Bearing       = Geodesy.ParseAngle(TxtStartBear.get())
     Route.OrthoDistance = Geodesy.ParseDistance(TxtStartDist.get())
   except ValueError as InvalidCoord:
     messagebox.showerror(title="Direct distance", message="Check origin point and route information")
@@ -201,19 +203,19 @@ FrameRoute = tkinter.LabelFrame(master=home, text="Orthodromic route", font=Defa
 FrameRoute.grid(row=1,column=1,columnspan=2, padx=padValue, pady=padValue)
 LblStartBear = tkinter.Label(master=FrameRoute,text="Fwd. Az.", font=DefaultFontTuple)
 LblStartBear.grid(row=0,column=0,columnspan=1)
-TxtStartBear = tkinter.Entry(master=FrameRoute, width=20, font=NumericFontTuple)
+TxtStartBear = tkinter.Entry(master=FrameRoute, width=CentralWidth, font=NumericFontTuple)
 TxtStartBear.grid(row=1,column=0,columnspan=1)
 LblFinalAz = tkinter.Label(master=FrameRoute,text="Fin. Az.", font=DefaultFontTuple)
 LblFinalAz.grid(row=0,column=1,columnspan=1)
-TxtFinalAz = tkinter.Entry(master=FrameRoute, width=20, font=NumericFontTuple)
+TxtFinalAz = tkinter.Entry(master=FrameRoute, width=CentralWidth, font=NumericFontTuple)
 TxtFinalAz.grid(row=1,column=1,columnspan=1)
 LblStartDist = tkinter.Label(master=FrameRoute,text="Distance", font=DefaultFontTuple)
 LblStartDist.grid(row=2,column=0,columnspan=1)
-TxtStartDist = tkinter.Entry(master=FrameRoute, width=20, font=NumericFontTuple)
+TxtStartDist = tkinter.Entry(master=FrameRoute, width=CentralWidth, font=NumericFontTuple)
 TxtStartDist.grid(row=3,column=0,columnspan=1)
 LblMethod = tkinter.Label(master=FrameRoute, text="Method", font = DefaultFontTuple)
 LblMethod.grid(row=2, column=1)
-ListBoxMethod = ttk.Combobox(master=FrameRoute, font=DefaultFontTuple, state='readonly')
+ListBoxMethod = ttk.Combobox(master=FrameRoute, font=DefaultFontTuple, state='readonly', width=CentralWidth)
 ListBoxMethod['values'] = ComputationMethodsList
 ListBoxMethod.current(0)
 ListBoxMethod.grid(row=3,column=1)
