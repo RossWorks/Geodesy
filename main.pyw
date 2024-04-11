@@ -59,6 +59,9 @@ def Inverse_Imp():
   Origin = Geodesy.Point()
   Dest   = Geodesy.Point()
   Route  = Geodesy.Route()
+  TxtStartDist.delete(0,tkinter.END)
+  TxtStartBear.delete(0,tkinter.END)
+  TxtFinalAz.delete(0,tkinter.END)
   try:
     Origin.Latitude  = math.radians(float(TxtStartLat.get()))
     Origin.Longitude = math.radians(float(TxtStartLon.get()))
@@ -69,12 +72,16 @@ def Inverse_Imp():
     TxtStartBear.insert(0,"INVALID PARAM")
     messagebox.showerror(title="Inverse distance", message="Check origin and destination point information")
     return
-  Route = Geodesy.InverseVincenty(OriginPoint=Origin, DestinationPoint=Dest, tol = 1e-24)
-  TxtStartDist.delete(0,tkinter.END)
+  Method = ListBoxMethod.get()
+  if Method == ComputationMethodsList[0]: #Vincenty
+    Route = Geodesy.InverseVincenty(OriginPoint=Origin, DestinationPoint=Dest, tol = 1e-24)
+  elif Method == ComputationMethodsList[1]: #Sodano
+    Route = Geodesy.InverseSodano(OriginPoint=Origin, DestinationPoint=Dest)
+  else:
+    messagebox.showerror(title="Invalid method", message="Method " + Method + " not supported ATM")
+    return
   TxtStartDist.insert(0,str("{:.2f}".format(Route.OrthoDistance/1000)) + " km")
-  TxtStartBear.delete(0,tkinter.END)
   TxtStartBear.insert(0,str("{:.2f}".format(math.degrees(Route.FwdAz))) + "°")
-  TxtFinalAz.delete(0,tkinter.END)
   TxtFinalAz.insert(0,str("{:.2f}".format(math.degrees(Route.BackAz))) + "°")
 
 def Direct_Imp():
@@ -215,7 +222,8 @@ TxtStartDist = tkinter.Entry(master=FrameRoute, width=CentralWidth, font=Numeric
 TxtStartDist.grid(row=3,column=0,columnspan=1)
 LblMethod = tkinter.Label(master=FrameRoute, text="Method", font = DefaultFontTuple)
 LblMethod.grid(row=2, column=1)
-ListBoxMethod = ttk.Combobox(master=FrameRoute, font=DefaultFontTuple, state='readonly', width=CentralWidth)
+ListBoxMethod = ttk.Combobox(master=FrameRoute, font=DefaultFontTuple, state='readonly', width=CentralWidth,
+                             justify="center")
 ListBoxMethod['values'] = ComputationMethodsList
 ListBoxMethod.current(0)
 ListBoxMethod.grid(row=3,column=1)
