@@ -68,9 +68,12 @@ def InverseVincenty(OriginPoint : Point, DestinationPoint : Point, tol : float =
     cos_lambda_mem = math.cos(Lambda_mem)
     sin_sigma = math.sqrt(math.pow(cos_U2*sin_lambda_mem,2) + math.pow(cos_U1*sin_U2 - sin_U1*cos_U2*cos_lambda_mem, 2))
     cos_sigma = sin_U1*sin_U2 + cos_U1*cos_U2*cos_lambda_mem
-    sigma = math.atan2(sin_sigma,cos_sigma)
+    sigma = math.asin(sin_sigma)
     sin_alpha = (cos_U1*cos_U2*sin_lambda_mem)/(sin_sigma)
-    cos_2sigma_m = cos_sigma - (2*sin_U1*sin_U2)/(1-math.pow(sin_alpha,2))
+    try:
+      cos_2sigma_m = cos_sigma - (2*sin_U1*sin_U2)/(1-math.pow(sin_alpha,2))
+    except ZeroDivisionError:
+      cos_2sigma_m = 0.0
     C = flattening/16 * (1-math.pow(sin_alpha,2)) * (4+flattening*(4-3*(1-math.pow(sin_alpha,2))))
     Lambda = L + (1-C) * flattening * sin_alpha * (sigma + C*sin_sigma * (cos_2sigma_m + C*cos_sigma*(-1+2*math.pow(cos_2sigma_m,2))))
     Counter += 1
@@ -78,13 +81,13 @@ def InverseVincenty(OriginPoint : Point, DestinationPoint : Point, tol : float =
       break
     else:
       Lambda_mem = Lambda
-  u_squared = (1-math.pow(sin_alpha,2))*(math.pow(SemiMajorAxis,2)-math.pow(SemiMinorAxis,2))/math.pow(SemiMinorAxis,2)
-  A = 1 + u_squared/16384 * (4096 + u_squared*(-768+u_squared*(329-175*u_squared)))
-  B = u_squared/1024 * (256 + u_squared*(-128+u_squared*(74-47*u_squared)))
-  delta_sigma = B * sin_sigma * (cos_2sigma_m) + 0.25*B*(cos_sigma*(-1+2*cos_2sigma_m) - B/6 *cos_2sigma_m*(-3+4*math.pow(sin_sigma,2)*(-3+4*math.pow(cos_2sigma_m,2))))
+  u_squared = (1-math.pow(sin_alpha,2))*(math.pow(SemiMajorAxis,2)/math.pow(SemiMinorAxis,2) - 1.0)
+  A = 1 + u_squared / 16384 * (4096 + u_squared * (-768 + u_squared * (320 - 175 * u_squared)))
+  B = u_squared / 1024 * (256 + u_squared * (-128 + u_squared * (74 - 47 * u_squared)))
+  delta_sigma = B * sin_sigma * (cos_2sigma_m) + 0.25 * B * (cos_sigma * (-1 + 2 * math.pow(cos_2sigma_m, 2)) - B / 6 *cos_2sigma_m*(-3+4*math.pow(sin_sigma,2)*(-3+4*math.pow(cos_2sigma_m,2))))
   s = SemiMinorAxis * A * (sigma-delta_sigma)
   alpha1 = math.atan2(cos_U2 * math.sin(Lambda), cos_U1 * sin_U2 - sin_U1 * cos_U2 * math.cos(Lambda))
-  alpha2 = math.atan2(cos_U1*math.sin(Lambda), -1*sin_U1*cos_U2+cos_U1*sin_U2*math.cos(Lambda))
+  alpha2 = math.atan2(cos_U1 * math.sin(Lambda), -1*sin_U1*cos_U2+cos_U1*sin_U2*math.cos(Lambda))
   output.OrthoDistance = s
   output.FwdAz = alpha1
   output.BackAz = alpha2
