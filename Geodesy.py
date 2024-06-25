@@ -181,15 +181,7 @@ def DirectSodano(OriginPoint: Point, FwdAz: float, Distance: float) -> Point:
             + 5 / 4 * sin_phi_s * math.pow(cos_phi_s, 3)
         )
     )
-    phi_0 += (
-        a1
-        * m1
-        * scnd_Ecc_4th
-        * (
-            3 / 8 * sin_phi_s
-            + 1 / 4 * phi_s * cos_phi_s
-            - 5 / 8 * sin_phi_s * math.pow(cos_phi_s, 2)
-        )
+    phi_0 += (a1 * m1 * scnd_Ecc_4th * (3/8*sin_phi_s + 1/4*phi_s*cos_phi_s - 5/8*sin_phi_s*math.pow(cos_phi_s, 2))
     )
     tan_BckAz = cos_beta0 / (g * math.cos(phi_0) - math.sin(beta1) * math.sin(phi_0))
     tan_lambda = math.sin(phi_0)*math.sin(math.atan(tan_BckAz)) / (math.cos(beta1)*math.cos(phi_0) - math.sin(beta1)*math.sin(phi_0)*math.cos(math.atan(tan_BckAz)))
@@ -204,9 +196,7 @@ def DirectSodano(OriginPoint: Point, FwdAz: float, Distance: float) -> Point:
     return output
 
 
-def InverseVincenty(
-    OriginPoint: Point, DestinationPoint: Point, tol: float = 1e-12
-) -> Route:
+def InverseVincenty(OriginPoint: Point, DestinationPoint: Point, tol: float = 1e-12) -> Route:
     """
     implemented form Wikipedia page
     https://en.wikipedia.org/wiki/Vincenty's_formulae

@@ -129,9 +129,9 @@ def Direct_Imp():
         )
         return
     TxtDestLat.delete(0, tkinter.END)
-    TxtDestLat.insert(0, str(math.degrees(Dest.Latitude)))
+    TxtDestLat.insert(0, "{:.6f}".format((math.degrees(Dest.Latitude))) + " °")
     TxtDestLon.delete(0, tkinter.END)
-    TxtDestLon.insert(0, str(math.degrees(Dest.Longitude)))
+    TxtDestLon.insert(0, "{:.6f}".format(math.degrees(Dest.Longitude))  + " °")
 
 
 def SearchPoint():
