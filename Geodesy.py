@@ -322,6 +322,9 @@ def DirectVincenty(OriginPoint: Point, Route: Route, tol: float = 1e-12) -> Poin
         + math.cos(U1) * math.sin(sigma) * math.cos(Route.FwdAz),
         (1 - f)
         + math.sqrt(
+        + math.cos(U1) * math.sin(sigma) * math.cos(Route.FwdAz),
+        (1 - f)
+        + math.sqrt(
             math.pow(math.sin(Route.FwdAz), 2)
             + math.pow(
                 math.sin(U1) * math.sin(sigma)
@@ -361,24 +364,6 @@ def DirectVincenty(OriginPoint: Point, Route: Route, tol: float = 1e-12) -> Poin
 
 if __name__ == "__main__":
     print("Self test for " + __file__)
-    Origins = [
-        Point(
-            Name="TOP",
-            Lat=math.radians(44.916664101183414),
-            Lon=math.radians(7.850000336766243),
-        ),
-        Point(
-            Name="LAX",
-            Lat=math.radians(33.91666408628225),
-            Lon=math.radians(-118.41667162254453),
-        ),
-        Point(
-            Name="EDGA",
-            Lat=math.radians(50.58333205059171),
-            Lon=math.radians(7.93333338573575),
-        ),
-    ]
-    for point in Origins:
-        for otherPoint in Origins:
-            pass
+    Origins = [Point(Name="TOP"),
+               Point(Name="TOP")]
     exit()
