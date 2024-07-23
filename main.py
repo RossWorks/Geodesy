@@ -83,24 +83,20 @@ def Inverse_Imp():
         )
         return
     Method = ListBoxMethod.get()
-    if Method == ComputationMethodsList[0]:  # Vincenty
+    if False and Method == ComputationMethodsList[0]:  # Vincenty
         Route = Geodesy.InverseVincenty(
             OriginPoint=Origin, DestinationPoint=Dest, tol=1e-24
         )
     elif Method == ComputationMethodsList[1]:  # Sodano
-        Route = Geodesy.InverseSodano(
-            OriginPoint=Origin, DestinationPoint=Dest)
+        Route = Geodesy.InverseSodano(OriginPoint=Origin,
+                                      DestinationPoint=Dest)
     else:
-        messagebox.showerror(
-            title="Invalid method", message="Method " + Method + " not supported ATM"
-        )
+        messagebox.showerror(title="Invalid method",
+                             message="Method " + Method + " not supported ATM")
         return
-    TxtStartDist.insert(0, str("{:.2f}".format(
-        Route.OrthoDistance / 1000)) + " km")
-    TxtStartBear.insert(
-        0, str("{:.2f}".format(math.degrees(Route.FwdAz))) + "°")
-    TxtFinalAz.insert(0, str("{:.2f}".format(
-        math.degrees(Route.BackAz))) + "°")
+    TxtStartDist.insert(0, str("{:.2f}".format(Route.OrthoDistance / 1000)) + " km")
+    TxtStartBear.insert(0, str("{:.2f}".format(math.degrees(Route.FwdAz))) + "°")
+    TxtFinalAz.insert(0, str("{:.2f}".format(math.degrees(Route.BackAz))) + "°")
 
 
 def Direct_Imp():
