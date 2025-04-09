@@ -1,8 +1,6 @@
-if __name__ == "__main__":
-  print("Standalone operation not available")
-  exit()
-
 import numpy as np
+
+MAX_ITERATIONS : int = 500
 
 DistanceUnits2Meters : dict[str:np.float128] = {'m'  : np.float128(    1.0),
                                                 'km' : np.float128( 1000.0),
@@ -193,7 +191,7 @@ def InverseVincenty(OriginPoint : Point, DestinationPoint : Point, tol : np.floa
   L = DestinationPoint.Longitude - OriginPoint.Longitude
   Lambda_mem = L
   Lambda = 0
-  for Counter in range(500):
+  for Counter in range(MAX_ITERATIONS):
     sin_lambda_mem = np.sin(Lambda_mem)
     cos_lambda_mem = np.cos(Lambda_mem)
     sin_sigma = np.sqrt(np.square(cos_U2*sin_lambda_mem) + np.square(cos_U1*sin_U2 - sin_U1*cos_U2*cos_lambda_mem))
@@ -237,7 +235,7 @@ def DirectVincenty(OriginPoint : Point, Route : Route, tol : np.float128 = 1e-12
   A      : np.float128 = 1 + u_2/16384*(4096+u_2*(-768+u_2*(320-175*u_2)))
   B      : np.float128 = u_2/1024 * (256+u_2*(-128 + u_2*(74 - 47*u_2)))
   sigma_mem = Route.OrthoDistance/(SemiMinorAxis*A)
-  while counter < 500:
+  for counter in range(MAX_ITERATIONS):
     _2_sigma_m = 2*sigma1+sigma_mem
     delta_sigma = B * np.sin(sigma_mem)*(np.cos(_2_sigma_m) + .25*B * (np.cos(sigma_mem)*(-1+2*np.power(np.cos(_2_sigma_m),2)) - B/6*np.cos(_2_sigma_m) * (-3+4*(np.power(np.sin(sigma_mem),2))) * (-3+4*(np.power(np.cos(_2_sigma_m),2)))))
     sigma = Route.OrthoDistance/(SemiMinorAxis*A) + delta_sigma
