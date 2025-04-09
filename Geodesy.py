@@ -103,8 +103,76 @@ def InverseSodano(OriginPoint: Point, DestinationPoint: Point) -> Route:
     return output
 
 
-def DirectSodano(OriginPoint: Point, FwdAz: float, Distance: float) -> Point:
+def DirectSodano(OriginPoint: Point, Route: Route) -> Point:
     output = Point()
+    sin_alpha12 = np.sin(Route.FwdAz)
+    print("sin alpha 1-2 = " + str(sin_alpha12))
+    cos_alpha12 = np.cos(Route.FwdAz)
+    e2 = (np.square(SemiMajorAxis) / np.square(SemiMinorAxis)) - 1
+    print("e2 = " + str(e2))
+    e4 = np.square(e2)
+    if np.absolute(OriginPoint.Latitude) <= (np.pi / 4):
+        beta1 = np.arctan(math.tan(OriginPoint.Latitude) * (1 - f))
+    else:
+        cot_B = np.power(np.tan(OriginPoint.Latitude), -1)
+        cot_beta1 = cot_B / (1 - f)
+        beta1 = np.arctan(np.power(cot_beta1, -1))
+    sin_beta1 = np.sin(beta1)
+    print("sin beta1 = " + str(sin_beta1))
+    cos_beta1 = np.cos(beta1)
+    print("cos beta1 = " + str(cos_beta1))
+    cos_beta0 = cos_beta1 * sin_alpha12
+    g = cos_beta1 * cos_alpha12
+    print("g = " + str(g))
+    m1 = (1 + e2/2*np.square(sin_beta1)) * (1-np.square(cos_beta0))
+    print("m1 = " + str(m1))
+    phi_S = Route.OrthoDistance / SemiMinorAxis
+    print("phiS = " + str(phi_S))
+    sin_phiS = np.sin(phi_S)
+    cos_phiS = np.cos(phi_S)
+    a1 = (1 + e2/2*np.square(sin_beta1)) * (np.square(sin_beta1)*np.cos(phi_S) + g*sin_beta1*np.sin(phi_S))
+    phi_0 = phi_S
+    phi_0 += a1 * (-e2/2 * np.sin(phi_S))
+    phi_0 += m1 * (e2/4 * (-phi_S+np.sin(phi_S)*np.cos(phi_S)))
+    phi_0 += np.square(a1) * (0.625*e4*sin_phiS*cos_phiS)
+    phi_0 += np.square(m1) * (11/64*e4*phi_S - 13/64*e4*sin_phiS*cos_phiS - e4/8*phi_S*np.square(cos_phiS) + 5/32*e4*sin_phiS*np.power(cos_phiS, 3))
+    phi_0 += a1*m1 * (3/8*e4*sin_phiS + e4/4*phi_S*cos_phiS - 5/8*e4*sin_phiS*np.square(cos_phiS))
+    sin_phi0 = np.sin(phi_0)
+    cos_phi0 = np.cos(phi_0)
+    cot_alpha21 = (g*cos_phi0 - sin_beta1*sin_phi0) / cos_beta0
+    if np.absolute(sin_alpha12) < np.rad2deg(1e-6):
+        alpha21 = 0
+    else:
+        if np.absolute(cot_alpha21) > 1:
+            alpha21 = np.arctan(cot_alpha21)
+        else:
+            tan_alpha21 = 1 / cot_alpha21
+            alpha21 = np.arctan(tan_alpha21)
+    cot_lambda = (cos_beta1*cos_phi0 - sin_beta1*sin_phi0*cos_alpha12) / (sin_phi0*sin_alpha12)
+    if np.absolute(sin_alpha12) < np.rad2deg(1e-6):
+        lambda_ = 0
+    else:
+        if np.absolute(cot_lambda) > 1:
+            lambda_ = np.arctan(cot_lambda)
+        else:
+            tan_lambda = 1 / cot_lambda
+            lambda_ = np.arctan(tan_lambda)
+    k = -f*phi_S + a1*1.5*f*f*sin_phiS + m1*(.75*f*f*phi_S - .75*f*f*sin_phiS*cos_phiS)
+    L = k * cos_beta0 + lambda_
+    print("L = " + str(L))
+    output.Longitude = OriginPoint.Longitude + L
+    if np.absolute(output.Longitude) > np.deg2rad(180.0):
+        output.Longitude += -(2*np.pi) * np.sign(output.Longitude)
+    sin_beta2 = sin_beta1*cos_phi0 + g*sin_phi0
+    cos_beta2 = np.sqrt(np.square(cos_beta0) + np.square(g*cos_phi0-sin_beta1+sin_phi0))
+    tan_beta2 = sin_beta2 / cos_beta2
+    cot_beta2 = cos_beta2 / sin_beta2
+    if np.absolute(tan_beta2) < np.absolute(cot_beta2):
+        tan_B = tan_beta2 / (1-f)
+        output.Latitude = np.arctan(tan_B)
+    else:
+        cot_B = cot_beta2 * (1-f)
+        output.Latitude = np.arctan(1/cot_B)
     return output
 
 
@@ -130,5 +198,10 @@ if __name__ == "__main__":
     O = Point(Name="origine", Lat=np.deg2rad(20.0), Lon = 0)
     D = Point(Name="destinazione", Lat=np.deg2rad(45.0), Lon =np.deg2rad(106.0))
     Rotta = InverseSodano(O, D)
-    print("S (meters) = " + str(Rotta.OrthoDistance))
+    print("Sodano Inversa (meters) = " + str(Rotta.OrthoDistance)+"\n\n")
+    Rotta2 = Route()
+    Rotta2.FwdAz = np.deg2rad(42.94168)
+    Rotta2.OrthoDistance = 9649412.505
+    D = DirectSodano(OriginPoint=O,Route=Rotta)
+    print("D = " + str(np.rad2deg(D.Latitude)) + ", " + str(np.rad2deg(D.Longitude)))
     exit()

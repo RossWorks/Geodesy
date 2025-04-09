@@ -118,7 +118,7 @@ def Direct_Imp():
     if Method == ComputationMethodsList[0]:  # Vincenty
         Dest = Geodesy.DirectVincenty(OriginPoint=Origin, Route=Route, tol=1e-24)
     elif Method == ComputationMethodsList[1]: #Sodano
-        Dest = Geodesy.DirectSodano(OriginPoint=Origin, FwdAz=Route.FwdAz, Distance=Route.OrthoDistance)
+        Dest = Geodesy.DirectSodano(OriginPoint=Origin, Route=Route)
     else:
         messagebox.showerror(
             title="Invalid method", message="Method " + Method + " not supported ATM"
