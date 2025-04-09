@@ -40,7 +40,7 @@ class Route:
         self.BackAz = np.float128(0.0)
         self.OrthoDistance = np.float128(0.0)
 
-
+# as per WGS84
 SemiMajorAxis = np.float128(6378388.0)#6378137.0)
 flattening = np.float128(.003367003367)#1 / 298.257223563)
 SemiMinorAxis = np.float128(6356911.946)#(1 - f) * SemiMajorAxis
@@ -112,7 +112,7 @@ def DirectSodano(OriginPoint: Point, Route: Route) -> Point:
     print("e2 = " + str(e2))
     e4 = np.square(e2)
     if np.absolute(OriginPoint.Latitude) <= (np.pi / 4):
-        beta1 = np.arctan(math.tan(OriginPoint.Latitude) * (1 - flattening))
+        beta1 = np.arctan(np.tan(OriginPoint.Latitude) * (1 - flattening))
     else:
         cot_B = np.power(np.tan(OriginPoint.Latitude), -1)
         cot_beta1 = cot_B / (1 - flattening)
@@ -190,23 +190,23 @@ def InverseVincenty(OriginPoint : Point, DestinationPoint : Point, tol : np.floa
   cos_U1 = np.cos(U1)
   sin_U2 = np.sin(U2)
   cos_U2 = np.cos(U2)
-  L = DestinationPoint.Longitude-OriginPoint.Longitude
+  L = DestinationPoint.Longitude - OriginPoint.Longitude
   Lambda_mem = L
   Lambda = 0
-  while Counter < 500:
+  for Counter in range(500):
     sin_lambda_mem = np.sin(Lambda_mem)
     cos_lambda_mem = np.cos(Lambda_mem)
-    sin_sigma = np.sqrt(np.power(cos_U2*sin_lambda_mem,2) + np.power(cos_U1*sin_U2 - sin_U1*cos_U2*cos_lambda_mem, 2))
+    sin_sigma = np.sqrt(np.square(cos_U2*sin_lambda_mem) + np.square(cos_U1*sin_U2 - sin_U1*cos_U2*cos_lambda_mem))
     cos_sigma = sin_U1*sin_U2 + cos_U1*cos_U2*cos_lambda_mem
-    sigma = np.arcsin(sin_sigma)
+    sigma = np.arctan2(sin_sigma, cos_sigma)
     sin_alpha = (cos_U1*cos_U2*sin_lambda_mem)/(sin_sigma)
+    cos2_alpha = 1 - np.square(sin_alpha)
     try:
-      cos_2sigma_m = cos_sigma - (2*sin_U1*sin_U2)/(1-np.power(sin_alpha,2))
+      cos_2sigma_m = cos_sigma - (2*sin_U1*sin_U2)/cos2_alpha
     except ZeroDivisionError:
       cos_2sigma_m = 0.0
-    C = flattening/16 * (1-np.power(sin_alpha,2)) * (4+flattening*(4-3*(1-np.power(sin_alpha,2))))
+    C = flattening/16 * cos2_alpha * (4+flattening*(4-3*cos2_alpha))
     Lambda = L + (1-C) * flattening * sin_alpha * (sigma + C*sin_sigma * (cos_2sigma_m + C*cos_sigma*(-1+2*np.power(cos_2sigma_m,2))))
-    Counter += 1
     if abs(Lambda - Lambda_mem) < tol:
       break
     else:
@@ -214,7 +214,7 @@ def InverseVincenty(OriginPoint : Point, DestinationPoint : Point, tol : np.floa
   u_squared = (1-np.power(sin_alpha,2))*(np.power(SemiMajorAxis,2)/np.power(SemiMinorAxis,2) - 1.0)
   A = 1 + u_squared / 16384 * (4096 + u_squared * (-768 + u_squared * (320 - 175 * u_squared)))
   B = u_squared / 1024 * (256 + u_squared * (-128 + u_squared * (74 - 47 * u_squared)))
-  delta_sigma = B * sin_sigma * (cos_2sigma_m) + 0.25 * B * (cos_sigma * (-1 + 2 * np.power(cos_2sigma_m, 2)) - B / 6 *cos_2sigma_m*(-3+4*np.power(sin_sigma,2)*(-3+4*np.power(cos_2sigma_m,2))))
+  delta_sigma = B * sin_sigma * (cos_2sigma_m + 0.25 * B * (cos_sigma * (-1 + 2 * np.power(cos_2sigma_m, 2)) - B / 6 *cos_2sigma_m*(-3+4*np.power(sin_sigma,2)*(-3+4*np.power(cos_2sigma_m,2)))))
   s = SemiMinorAxis * A * (sigma-delta_sigma)
   alpha1 = np.arctan2(cos_U2 * np.sin(Lambda), cos_U1 * sin_U2 - sin_U1 * cos_U2 * np.cos(Lambda))
   alpha2 = np.arctan2(cos_U1 * np.sin(Lambda), -1*sin_U1*cos_U2+cos_U1*sin_U2*np.cos(Lambda))

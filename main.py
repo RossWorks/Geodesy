@@ -83,7 +83,7 @@ def Inverse_Imp():
         )
         return
     Method = ListBoxMethod.get()
-    if False and Method == ComputationMethodsList[0]:  # Vincenty
+    if Method == ComputationMethodsList[0]:  # Vincenty
         Route = Geodesy.InverseVincenty(
             OriginPoint=Origin, DestinationPoint=Dest, tol=1e-24
         )
