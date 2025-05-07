@@ -90,6 +90,9 @@ def Inverse_Imp():
     elif Method == ComputationMethodsList[1]:  # Sodano
         Route = Geodesy.InverseSodano(OriginPoint=Origin,
                                       DestinationPoint=Dest)
+    elif Method == ComputationMethodsList[2]:  #Sphere
+        Route = Geodesy.InverseShperical(OriginPoint=Origin,
+                                         DestinationPoint=Dest)
     else:
         messagebox.showerror(title="Invalid method",
                              message="Method " + Method + " not supported ATM")
@@ -119,6 +122,8 @@ def Direct_Imp():
         Dest = Geodesy.DirectVincenty(OriginPoint=Origin, Route=Route, tol=1e-24)
     elif Method == ComputationMethodsList[1]: #Sodano
         Dest = Geodesy.DirectSodano(OriginPoint=Origin, Route=Route)
+    elif Method == ComputationMethodsList[2]: #Sphere
+        Dest = Geodesy.DirectShperical(OriginPoint=Origin, Route=Route)
     else:
         messagebox.showerror(
             title="Invalid method", message="Method " + Method + " not supported ATM"

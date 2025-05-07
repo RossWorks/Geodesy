@@ -44,6 +44,59 @@ flattening = np.float128(.003367003367)#1 / 298.257223563)
 SemiMinorAxis = np.float128(6356911.946)#(1 - f) * SemiMajorAxis
 scnd_Ecc_sqrd = (np.square(SemiMajorAxis) / np.square(SemiMinorAxis)) - 1
 
+def InverseShperical(OriginPoint: Point, DestinationPoint: Point) -> Route:
+   output = Route()
+   MeanEarthRadius = (SemiMajorAxis + SemiMinorAxis) / 2
+   if np.abs(OriginPoint.Latitude - DestinationPoint.Latitude) < 1e-8 and \
+      np.abs(OriginPoint.Longitude - DestinationPoint.Longitude) < 1e-8:
+      output.OrthoDistance = np.float128(0.0)
+      output.BackAz = np.float128(0.0)
+      output.FwdAz = np.float128(0.0)
+      return output
+   #generic trigonometric
+   sin_phi1 = np.sin(OriginPoint.Latitude)
+   cos_phi1 = np.cos(OriginPoint.Latitude)
+   sin_phi2 = np.sin(DestinationPoint.Latitude)
+   cos_phi2 = np.cos(DestinationPoint.Latitude)
+   delta_lambda = DestinationPoint.Longitude - OriginPoint.Longitude
+   sin_delta_lambda = np.sin(delta_lambda)
+   cos_delta_lambda = np.cos(delta_lambda)
+
+   #FAZ
+   N = (cos_phi2 * sin_delta_lambda)
+   D = (cos_phi1*sin_phi2 - sin_phi1*cos_phi2*cos_delta_lambda)
+   output.FwdAz = np.arctan2(N,D)
+
+   #Distance
+   delta_sigma  = np.arccos(sin_phi1*sin_phi2 + cos_phi1*cos_phi2*np.cos(delta_lambda))
+   output.OrthoDistance = MeanEarthRadius * delta_sigma
+   
+   #BAZ
+   N = (cos_phi1 * sin_delta_lambda)
+   D = (-1*cos_phi2*sin_phi1 + sin_phi2*cos_phi1*cos_delta_lambda)
+   T = np.arctan2(N,D)
+   output.BackAz = 2.3
+   return output
+
+def DirectShperical(OriginPoint : Point, Route : Route) -> Point:
+   output = Point()
+   MeanEarthRadius = (SemiMajorAxis + SemiMinorAxis) / 2
+   sin_phi1 = np.sin(OriginPoint.Latitude)
+   cos_phi1 = np.cos(OriginPoint.Latitude)
+   sigma_12 = Route.OrthoDistance / MeanEarthRadius
+   sin_sigma_12 = np.sin(sigma_12)
+   cos_sigma_12 = np.cos(sigma_12)
+   cos_faz = np.cos(Route.FwdAz)
+   sin_faz = np.sin(Route.FwdAz)
+   N = sin_phi1*cos_sigma_12 + cos_phi1*sin_sigma_12*cos_faz
+   D = np.square(cos_phi1*cos_sigma_12 - sin_phi1*sin_sigma_12*cos_faz)
+   D += np.square(sin_sigma_12*sin_faz)
+   D = np.sqrt(D)
+   output.Latitude = np.atan2(N,D)
+   N = sin_sigma_12*sin_faz
+   D = cos_phi1*cos_sigma_12 - sin_phi1*sin_sigma_12*cos_faz
+   output.Longitude = OriginPoint.Longitude + np.atan2(N,D)
+   return output
 
 def InverseSodano(OriginPoint: Point, DestinationPoint: Point) -> Route:
     output = Route()
