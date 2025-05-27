@@ -2,23 +2,23 @@ import numpy as np
 
 MAX_ITERATIONS : int = 500
 
-DistanceUnits2Meters : dict[str:np.float128] = {'m'  : np.float128(    1.0),
-                                                'km' : np.float128( 1000.0),
-                                                'nm' : np.float128( 1852.0),
-                                                'mi' : np.float128( 1609.0)}
+DistanceUnits2Meters : dict[str:np.float64] = {'m'  : np.float64(    1.0),
+                                               'km' : np.float64( 1000.0),
+                                               'nm' : np.float64( 1852.0),
+                                               'mi' : np.float64( 1609.0)}
 
-Angle2RadConverter : dict[str:np.float128] = {"°"   : np.float128(np.radians(1)),
+Angle2RadConverter : dict[str:np.float64] = {"°"   : np.float64(np.radians(1)),
                                               "rad" : 1.0}
 
-def ParseDistance(UserInput : str) -> np.float128:
+def ParseDistance(UserInput : str) -> np.float64:
   SpaceIndex = UserInput.find(' ')
-  Number = np.float128(UserInput[0:SpaceIndex])
+  Number = np.float64(UserInput[0:SpaceIndex])
   Unit = DistanceUnits2Meters[UserInput[SpaceIndex+1:].lower()]
   return Number * Unit
 
-def ParseAngle(UserInput : str) -> np.float128:
+def ParseAngle(UserInput : str) -> np.float64:
   SpaceIndex = UserInput.find(' ')
-  Number = np.float128(UserInput[0:SpaceIndex])
+  Number = np.float64(UserInput[0:SpaceIndex])
   Unit = Angle2RadConverter[UserInput[SpaceIndex+1:].lower()]
   return Number * Unit
 
@@ -26,22 +26,22 @@ def ParseAngle(UserInput : str) -> np.float128:
 class Point:
 
     def __init__(self, Name: str = "", Lat: float = 0.0, Lon: float = 0.0) -> None:
-        self.Latitude = np.float128(Lat)
-        self.Longitude = np.float128(Lon)
+        self.Latitude = np.float64(Lat)
+        self.Longitude = np.float64(Lon)
         self.Name = Name
 
 
 class Route:
 
     def __init__(self) -> None:
-        self.FwdAz = np.float128(0.0)
-        self.BackAz = np.float128(0.0)
-        self.OrthoDistance = np.float128(0.0)
+        self.FwdAz = np.float64(0.0)
+        self.BackAz = np.float64(0.0)
+        self.OrthoDistance = np.float64(0.0)
 
 # as per WGS84
-SemiMajorAxis = np.float128(6378388.0)#6378137.0)
-flattening = np.float128(.003367003367)#1 / 298.257223563)
-SemiMinorAxis = np.float128(6356911.946)#(1 - f) * SemiMajorAxis
+SemiMajorAxis = np.float64(6378388.0)#6378137.0)
+flattening = np.float64(.003367003367)#1 / 298.257223563)
+SemiMinorAxis = np.float64(6356911.946)#(1 - f) * SemiMajorAxis
 scnd_Ecc_sqrd = (np.square(SemiMajorAxis) / np.square(SemiMinorAxis)) - 1
 
 def InverseShperical(OriginPoint: Point, DestinationPoint: Point) -> Route:
@@ -49,9 +49,9 @@ def InverseShperical(OriginPoint: Point, DestinationPoint: Point) -> Route:
    MeanEarthRadius = (SemiMajorAxis + SemiMinorAxis) / 2
    if np.abs(OriginPoint.Latitude - DestinationPoint.Latitude) < 1e-8 and \
       np.abs(OriginPoint.Longitude - DestinationPoint.Longitude) < 1e-8:
-      output.OrthoDistance = np.float128(0.0)
-      output.BackAz = np.float128(0.0)
-      output.FwdAz = np.float128(0.0)
+      output.OrthoDistance = np.float64(0.0)
+      output.BackAz = np.float64(0.0)
+      output.FwdAz = np.float64(0.0)
       return output
    #generic trigonometric
    sin_phi1 = np.sin(OriginPoint.Latitude)
@@ -74,8 +74,7 @@ def InverseShperical(OriginPoint: Point, DestinationPoint: Point) -> Route:
    #BAZ
    N = (cos_phi1 * sin_delta_lambda)
    D = (-1*cos_phi2*sin_phi1 + sin_phi2*cos_phi1*cos_delta_lambda)
-   T = np.arctan2(N,D)
-   output.BackAz = 2.3
+   output.BackAz  = np.arctan2(N,D)
    return output
 
 def DirectShperical(OriginPoint : Point, Route : Route) -> Point:
@@ -169,16 +168,11 @@ def DirectSodano(OriginPoint: Point, Route: Route) -> Point:
         cot_beta1 = cot_B / (1 - flattening)
         beta1 = np.arctan(np.power(cot_beta1, -1))
     sin_beta1 = np.sin(beta1)
-    print("sin beta1 = " + str(sin_beta1))
     cos_beta1 = np.cos(beta1)
-    print("cos beta1 = " + str(cos_beta1))
     cos_beta0 = cos_beta1 * sin_alpha12
     g = cos_beta1 * cos_alpha12
-    print("g = " + str(g))
     m1 = (1 + e2/2*np.square(sin_beta1)) * (1-np.square(cos_beta0))
-    print("m1 = " + str(m1))
     phi_S = Route.OrthoDistance / SemiMinorAxis
-    print("phiS = " + str(phi_S))
     sin_phiS = np.sin(phi_S)
     cos_phiS = np.cos(phi_S)
     a1 = (1 + e2/2*np.square(sin_beta1)) * (np.square(sin_beta1)*np.cos(phi_S) + g*sin_beta1*np.sin(phi_S))
@@ -210,7 +204,6 @@ def DirectSodano(OriginPoint: Point, Route: Route) -> Point:
             lambda_ = np.arctan(tan_lambda)
     k = -flattening*phi_S + a1*1.5*flattening*flattening*sin_phiS + m1*(.75*flattening*flattening*phi_S - .75*flattening*flattening*sin_phiS*cos_phiS)
     L = k * cos_beta0 + lambda_
-    print("L = " + str(L))
     output.Longitude = OriginPoint.Longitude + L
     if np.absolute(output.Longitude) > np.deg2rad(180.0):
         output.Longitude += -(2*np.pi) * np.sign(output.Longitude)
@@ -227,7 +220,7 @@ def DirectSodano(OriginPoint: Point, Route: Route) -> Point:
     return output
 
 
-def InverseVincenty(OriginPoint : Point, DestinationPoint : Point, tol : np.float128 = 1e-12) -> Route:
+def InverseVincenty(OriginPoint : Point, DestinationPoint : Point, tol : np.float64 = 1e-12) -> Route:
   '''
   implemented form Wikipedia page
   https://en.wikipedia.org/wiki/Vincenty's_formulae
@@ -274,19 +267,19 @@ def InverseVincenty(OriginPoint : Point, DestinationPoint : Point, tol : np.floa
   output.BackAz = alpha2
   return output
 
-def DirectVincenty(OriginPoint : Point, Route : Route, tol : np.float128 = 1e-12) -> Point:
+def DirectVincenty(OriginPoint : Point, Route : Route, tol : np.float64 = 1e-12) -> Point:
   output = Point()
-  sigma : np.float128 = 0.0
-  sigma_mem : np.float128 = 0.0
-  delta_sigma : np.float128 = 0.0
-  _2_sigma_m : np.float128 = 0.0
+  sigma : np.float64 = 0.0
+  sigma_mem : np.float64 = 0.0
+  delta_sigma : np.float64 = 0.0
+  _2_sigma_m : np.float64 = 0.0
   counter: int = 0
-  U1     : np.float128 = np.arctan((1-flattening)*np.tan(OriginPoint.Latitude))
-  sigma1 : np.float128 = np.arctan2(np.tan(U1), np.cos(Route.FwdAz))
-  sin_a  : np.float128 = np.cos(U1)*np.sin(Route.FwdAz)
-  u_2    : np.float128 = (1-np.power(sin_a,2))*((np.power(SemiMajorAxis,2))/(np.power(SemiMinorAxis,2))-1)
-  A      : np.float128 = 1 + u_2/16384*(4096+u_2*(-768+u_2*(320-175*u_2)))
-  B      : np.float128 = u_2/1024 * (256+u_2*(-128 + u_2*(74 - 47*u_2)))
+  U1     : np.float64 = np.arctan((1-flattening)*np.tan(OriginPoint.Latitude))
+  sigma1 : np.float64 = np.arctan2(np.tan(U1), np.cos(Route.FwdAz))
+  sin_a  : np.float64 = np.cos(U1)*np.sin(Route.FwdAz)
+  u_2    : np.float64 = (1-np.power(sin_a,2))*((np.power(SemiMajorAxis,2))/(np.power(SemiMinorAxis,2))-1)
+  A      : np.float64 = 1 + u_2/16384*(4096+u_2*(-768+u_2*(320-175*u_2)))
+  B      : np.float64 = u_2/1024 * (256+u_2*(-128 + u_2*(74 - 47*u_2)))
   sigma_mem = Route.OrthoDistance/(SemiMinorAxis*A)
   for counter in range(MAX_ITERATIONS):
     _2_sigma_m = 2*sigma1+sigma_mem
