@@ -8,18 +8,28 @@ DistanceUnits2Meters : dict[str:np.float64] = {'m'  : np.float64(    1.0),
                                                'mi' : np.float64( 1609.0)}
 
 Angle2RadConverter : dict[str:np.float64] = {"°"   : np.float64(np.radians(1)),
-                                              "rad" : 1.0}
+                                             "rad" : 1.0}
 
 def ParseDistance(UserInput : str) -> np.float64:
   SpaceIndex = UserInput.find(' ')
+  if SpaceIndex < 0:
+    return np.nan
   Number = np.float64(UserInput[0:SpaceIndex])
-  Unit = DistanceUnits2Meters[UserInput[SpaceIndex+1:].lower()]
+  try:
+    Unit = DistanceUnits2Meters[UserInput[SpaceIndex+1:].lower()]
+  except KeyError:
+    return np.nan
   return Number * Unit
 
 def ParseAngle(UserInput : str) -> np.float64:
   SpaceIndex = UserInput.find(' ')
+  if SpaceIndex < 0:
+    return np.nan
   Number = np.float64(UserInput[0:SpaceIndex])
-  Unit = Angle2RadConverter[UserInput[SpaceIndex+1:].lower()]
+  try:
+    Unit = Angle2RadConverter[UserInput[SpaceIndex+1:].lower()]
+  except KeyError:
+    return np.nan
   return Number * Unit
 
 
@@ -91,7 +101,7 @@ def DirectShperical(OriginPoint : Point, Route : Route) -> Point:
    D = np.square(cos_phi1*cos_sigma_12 - sin_phi1*sin_sigma_12*cos_faz)
    D += np.square(sin_sigma_12*sin_faz)
    D = np.sqrt(D)
-   output.Latitude = np.atan2(N,D)
+   output.Latitude = np.arctan2(N,D)
    N = sin_sigma_12*sin_faz
    D = cos_phi1*cos_sigma_12 - sin_phi1*sin_sigma_12*cos_faz
    output.Longitude = OriginPoint.Longitude + np.atan2(N,D)

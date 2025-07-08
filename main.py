@@ -111,6 +111,8 @@ def Direct_Imp():
         Origin.Longitude = math.radians(float(TxtStartLon.get()))
         Route.FwdAz = Geodesy.ParseAngle(TxtStartBear.get())
         Route.OrthoDistance = Geodesy.ParseDistance(TxtStartDist.get())
+        if Route.OrthoDistance != Route.OrthoDistance or Route.FwdAz != Route.FwdAz:
+            raise ValueError
     except ValueError:
         messagebox.showerror(
             title="Direct distance",
