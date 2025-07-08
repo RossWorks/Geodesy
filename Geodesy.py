@@ -102,6 +102,7 @@ def InverseSodano(OriginPoint: Point, DestinationPoint: Point) -> Route:
     DeltaLon = DestinationPoint.Longitude - OriginPoint.Longitude
     DeltaLat = DestinationPoint.Latitude - OriginPoint.Latitude
     ArcIsMerid = np.abs(OriginPoint.Longitude - DestinationPoint.Longitude) < 1e-6
+    Take_tan : bool = False
     if DeltaLon > np.pi:
         DeltaLon += -2 * np.pi * np.sign(DeltaLon)
     if np.absolute(OriginPoint.Latitude) <= (np.pi / 4):
@@ -147,15 +148,18 @@ def InverseSodano(OriginPoint: Point, DestinationPoint: Point) -> Route:
     lam = k1 * c + DeltaLon
     cot_a12 = (sin_beta2 * cos_beta1 - np.cos(lam) * sin_beta1 * cos_beta2) / (np.sin(lam) * cos_beta2)
     cot_a21 = (sin_beta2 * cos_beta1 * np.cos(lam) - sin_beta1 * cos_beta2) / (np.sin(lam) * cos_beta1)
-    alpha12 = np.arctan(np.power(cot_a12, -1))
-    alpha21 = np.arctan(np.power(cot_a21, -1))
+    alpha12 = np.arctan(np.power(cot_a12, -1)) # if np.abs(cot_a12) <= 1 else np.arctan(cot_a12)
+    alpha21 = np.arctan(np.power(cot_a21, -1)) # if np.abs(cot_a21) <= 1 else np.arctan(cot_a21)
     output.OrthoDistance = S_bo * SemiMinorAxis
     if ArcIsMerid:
       output.FwdAz = 0.0 if DeltaLat >= 0 else np.pi
       output.BackAz = 0.0 if DeltaLat >= 0 else np.pi
-    else:
+    else: # applied weird selection of right angle via a 180° flip... weird, but seems to be working
+      if DeltaLat < 0:
+         alpha12 -= np.pi if DeltaLon >= 0 else -np.pi
+         alpha21 -= np.pi if DeltaLon >= 0 else -np.pi
       output.FwdAz = np.mod(alpha12 + 2*np.pi, 2*np.pi)
-      output.BackAz = np.mod(alpha21 + np.pi, 2*np.pi)
+      output.BackAz = np.mod(alpha21, 2*np.pi)
     return output
 
 
@@ -163,6 +167,7 @@ def DirectSodano(OriginPoint: Point, Route: Route) -> Point:
     output = Point()
     sin_alpha12 = np.sin(Route.FwdAz)
     cos_alpha12 = np.cos(Route.FwdAz)
+    ArcIsMeridional = np.absolute(sin_alpha12) < np.rad2deg(1e-6)
     e2 = (np.square(SemiMajorAxis) / np.square(SemiMinorAxis)) - 1
     e4 = np.square(e2)
     if np.absolute(OriginPoint.Latitude) <= (np.pi / 4):
@@ -179,30 +184,32 @@ def DirectSodano(OriginPoint: Point, Route: Route) -> Point:
     phi_S = Route.OrthoDistance / SemiMinorAxis
     sin_phiS = np.sin(phi_S)
     cos_phiS = np.cos(phi_S)
-    a1 = (1 + e2/2*np.square(sin_beta1)) * (np.square(sin_beta1)*np.cos(phi_S) + g*sin_beta1*np.sin(phi_S))
+    a1 = (1 + e2/2*np.square(sin_beta1)) * (np.square(sin_beta1)*cos_phiS + g*sin_beta1*sin_phiS)
     phi_0 = phi_S
-    phi_0 += a1 * (-e2/2 * np.sin(phi_S))
-    phi_0 += m1 * (e2/4 * (-phi_S+np.sin(phi_S)*np.cos(phi_S)))
+    phi_0 += a1 * -e2/2 * sin_phiS
+    phi_0 += m1 * e2/4 * (-phi_S+sin_phiS*cos_phiS)
     phi_0 += np.square(a1) * (0.625*e4*sin_phiS*cos_phiS)
     phi_0 += np.square(m1) * (11/64*e4*phi_S - 13/64*e4*sin_phiS*cos_phiS - e4/8*phi_S*np.square(cos_phiS) + 5/32*e4*sin_phiS*np.power(cos_phiS, 3))
     phi_0 += a1*m1 * (3/8*e4*sin_phiS + e4/4*phi_S*cos_phiS - 5/8*e4*sin_phiS*np.square(cos_phiS))
     sin_phi0 = np.sin(phi_0)
     cos_phi0 = np.cos(phi_0)
-    cot_alpha21 = (g*cos_phi0 - sin_beta1*sin_phi0) / cos_beta0
-    if np.absolute(sin_alpha12) < np.rad2deg(1e-6):
+    cot_alpha21 = (g*cos_phi0 - sin_beta1*sin_phi0)
+    if ArcIsMeridional:
         alpha21 = 0
     else:
+        cot_alpha21 /= cos_beta0
         if np.absolute(cot_alpha21) > 1:
-            alpha21 = np.arctan(cot_alpha21)
+            alpha21 = 1 / np.arctan(1/cot_alpha21)
         else:
             tan_alpha21 = 1 / cot_alpha21
             alpha21 = np.arctan(tan_alpha21)
-    cot_lambda = (cos_beta1*cos_phi0 - sin_beta1*sin_phi0*cos_alpha12) / (sin_phi0*sin_alpha12)
+    cot_lambda = (cos_beta1*cos_phi0 - sin_beta1*sin_phi0*cos_alpha12)
     if np.absolute(sin_alpha12) < np.rad2deg(1e-6):
         lambda_ = 0
     else:
+        cot_lambda /= (sin_phi0*sin_alpha12)
         if np.absolute(cot_lambda) > 1:
-            lambda_ = np.arctan(cot_lambda)
+            lambda_ = 1 / np.arctan(1/cot_lambda)
         else:
             tan_lambda = 1 / cot_lambda
             lambda_ = np.arctan(tan_lambda)
@@ -230,7 +237,6 @@ def InverseVincenty(OriginPoint : Point, DestinationPoint : Point, tol : np.floa
   https://en.wikipedia.org/wiki/Vincenty's_formulae
   inputs and outputs are in MKS system
   '''
-  Counter : int = 0
   output = Route()
   U1 = np.arctan((1-flattening)*np.tan(OriginPoint.Latitude)) #reduced latitude of origin point
   U2 = np.arctan((1-flattening)*np.tan(DestinationPoint.Latitude)) #reduced longitude of origin point
