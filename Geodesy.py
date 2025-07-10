@@ -293,7 +293,6 @@ def DirectVincenty(OriginPoint : Point, Route : Route, tol : np.float64 = 1e-12)
   sigma_mem : np.float64 = 0.0
   delta_sigma : np.float64 = 0.0
   _2_sigma_m : np.float64 = 0.0
-  counter: int = 0
   U1     : np.float64 = np.arctan((1-flattening)*np.tan(OriginPoint.Latitude))
   sigma1 : np.float64 = np.arctan2(np.tan(U1), np.cos(Route.FwdAz))
   sin_a  : np.float64 = np.cos(U1)*np.sin(Route.FwdAz)
@@ -303,18 +302,21 @@ def DirectVincenty(OriginPoint : Point, Route : Route, tol : np.float64 = 1e-12)
   sigma_mem = Route.OrthoDistance/(SemiMinorAxis*A)
   for counter in range(MAX_ITERATIONS):
     _2_sigma_m = 2*sigma1+sigma_mem
-    delta_sigma = B * np.sin(sigma_mem)*(np.cos(_2_sigma_m) + .25*B * (np.cos(sigma_mem)*(-1+2*np.power(np.cos(_2_sigma_m),2)) - B/6*np.cos(_2_sigma_m) * (-3+4*(np.power(np.sin(sigma_mem),2))) * (-3+4*(np.power(np.cos(_2_sigma_m),2)))))
+    delta_sigma = np.cos(sigma_mem) * (-1 + 2*np.square(np.cos(_2_sigma_m)))
+    delta_sigma += 1/6*B * np.cos(_2_sigma_m) * (-3+4*np.square(np.sin(sigma_mem))) * (-3+4*np.square(np.cos(_2_sigma_m)))
+    delta_sigma *= B/4
+    delta_sigma += np.cos(_2_sigma_m)
+    delta_sigma *= B * np.sin(sigma_mem)
     sigma = Route.OrthoDistance/(SemiMinorAxis*A) + delta_sigma
     if (abs(sigma-sigma_mem) < tol):
       break
     sigma_mem = sigma
-    counter += 1
   output.Latitude = np.arctan2(np.sin(U1)*np.cos(sigma) + np.cos(U1)*np.sin(sigma)*np.cos(Route.FwdAz),
-                               (1-flattening)+np.sqrt(np.power(np.sin(Route.FwdAz),2) + np.power(np.sin(U1)*np.sin(sigma) - np.cos(U1)*np.cos(sigma)*np.cos(Route.FwdAz),2)))
+                               (1-flattening)*np.sqrt(np.square(np.sin(Route.FwdAz)) + np.square(np.sin(U1)*np.sin(sigma) - np.cos(U1)*np.cos(sigma)*np.cos(Route.FwdAz))))
   lambda_ = np.arctan2(np.sin(sigma)*np.sin(Route.FwdAz),
                        np.cos(U1)*np.cos(sigma) - np.sin(U1)*np.sin(sigma)*np.cos(Route.FwdAz))
-  C = flattening/16 * np.power(np.cos(Route.FwdAz),2) * (4+flattening*(4-3*np.power(np.cos(Route.FwdAz),2)))
-  L = lambda_ - (1-C)*flattening*np.sin(Route.FwdAz) * (sigma + C*np.sin(sigma)*(np.cos(_2_sigma_m) + C*np.cos(sigma)*(-1+2*np.power(np.cos(_2_sigma_m),2))))
+  C = flattening/16 * np.square(np.cos(Route.FwdAz)) * (4 + flattening*(4 - 3*np.square(np.cos(Route.FwdAz))))
+  L = lambda_ - (1-C)*flattening*np.sin(Route.FwdAz) * (sigma + C*np.sin(sigma)*(np.cos(_2_sigma_m) + C*np.cos(sigma)*(-1+2*np.square(np.cos(_2_sigma_m)))))
   output.Longitude = OriginPoint.Longitude + L
   alpha2 = np.arctan2(np.sin(Route.FwdAz),
                       -np.sin(U1)*np.sin(sigma) + np.cos(U1)*np.cos(sigma)*np.cos(Route.FwdAz))
