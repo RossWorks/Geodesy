@@ -205,25 +205,21 @@ def DirectSodano(OriginPoint: Point, Route: Route) -> Point:
     cos_phi0 = np.cos(phi_0)
     cot_alpha21 = (g*cos_phi0 - sin_beta1*sin_phi0)
     if ArcIsMeridional:
-        alpha21 = 0
+        alpha21 = 0 if cot_alpha21 >= 0 else np.pi
     else:
         cot_alpha21 /= cos_beta0
-        if np.absolute(cot_alpha21) > 1:
-            alpha21 = 1 / np.arctan(1/cot_alpha21)
-        else:
-            tan_alpha21 = 1 / cot_alpha21
-            alpha21 = np.arctan(tan_alpha21)
+        tan_alpha21 = 1 / cot_alpha21
+        alpha21 = np.arctan(tan_alpha21)
+    if Route.FwdAz <= np.pi and Route.FwdAz >= 0:
+       pass
     cot_lambda = (cos_beta1*cos_phi0 - sin_beta1*sin_phi0*cos_alpha12)
-    if np.absolute(sin_alpha12) < np.rad2deg(1e-6):
+    if ArcIsMeridional:
         lambda_ = 0
     else:
         cot_lambda /= (sin_phi0*sin_alpha12)
-        if np.absolute(cot_lambda) > 1:
-            lambda_ = 1 / np.arctan(1/cot_lambda)
-        else:
-            tan_lambda = 1 / cot_lambda
-            lambda_ = np.arctan(tan_lambda)
-    k = -flattening*phi_S + a1*1.5*flattening*flattening*sin_phiS + m1*(.75*flattening*flattening*phi_S - .75*flattening*flattening*sin_phiS*cos_phiS)
+        tan_lambda = 1 / cot_lambda
+        lambda_ = np.arctan(tan_lambda)
+    k = -flattening*phi_S + a1*1.5*np.square(flattening)*sin_phiS + m1*(.75*np.square(flattening)*phi_S - .75*np.square(flattening)*sin_phiS*cos_phiS)
     L = k * cos_beta0 + lambda_
     output.Longitude = OriginPoint.Longitude + L
     if np.absolute(output.Longitude) > np.deg2rad(180.0):
