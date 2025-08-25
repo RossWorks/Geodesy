@@ -379,5 +379,8 @@ CmdSearch2.grid(row=4, column=1)
 TxtSearch2 = tkinter.Entry(master=FrameDest, width=6, font=DefaultFontTuple)
 TxtSearch2.grid(row=4, column=0)
 
+MyTabOrder = (TxtStartLat, TxtStartLon, TxtStartBear, TxtFinalAz, TxtStartDist,
+              TxtDestLat, TxtDestLon, ListBoxMethod, CmdDirect, CmdInverse)
+
 
 home.mainloop()
