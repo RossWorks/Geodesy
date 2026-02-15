@@ -2,37 +2,6 @@ import numpy as np
 
 MAX_ITERATIONS : int = 500
 
-DistanceUnits2Meters : dict[str:np.float64] = {'m'  : np.float64(    1.0),
-                                               'km' : np.float64( 1000.0),
-                                               'nm' : np.float64( 1852.0),
-                                               'mi' : np.float64( 1609.0)}
-
-Angle2RadConverter : dict[str:np.float64] = {"°"   : np.float64(np.radians(1)),
-                                             "rad" : 1.0}
-
-def ParseDistance(UserInput : str) -> np.float64:
-  SpaceIndex = UserInput.find(' ')
-  if SpaceIndex < 0:
-    return np.nan
-  Number = np.float64(UserInput[0:SpaceIndex])
-  try:
-    Unit = DistanceUnits2Meters[UserInput[SpaceIndex+1:].lower()]
-  except KeyError:
-    return np.nan
-  return Number * Unit
-
-def ParseAngle(UserInput : str) -> np.float64:
-  SpaceIndex = UserInput.find(' ')
-  if SpaceIndex < 0:
-    return np.nan
-  Number = np.float64(UserInput[0:SpaceIndex])
-  try:
-    Unit = Angle2RadConverter[UserInput[SpaceIndex+1:].lower()]
-  except KeyError:
-    return np.nan
-  return Number * Unit
-
-
 class Point:
 
     def __init__(self, Name: str = "", Lat: float = 0.0, Lon: float = 0.0) -> None:

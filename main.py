@@ -3,6 +3,7 @@ import tkinter
 import Geodesy
 import math
 import DbManager
+import numpy as np
 from tkinter import messagebox, filedialog, ttk
 
 padValue = 10
@@ -17,6 +18,50 @@ MyDatabase = DbManager.Database()
 SearchResult = list()
 SearchResult2 = list()
 
+DistanceUnits2Meters : dict[str:np.float64] = {'m'  : np.float64(    1.0),
+                                               'km' : np.float64( 1000.0),
+                                               'nm' : np.float64( 1852.0),
+                                               'mi' : np.float64( 1609.0)}
+
+Angle2RadConverter : dict[str:np.float64] = {"°"   : np.float64(np.radians(1)),
+                                             "rad" : 1.0}
+
+DistanceName = list(DistanceUnits2Meters.keys())
+Anglename = ["°"]
+SelectedDistance = 0
+
+def CycleUnits():
+    global SelectedDistance
+    global DistanceString, LblStartDist
+    if SelectedDistance < len(DistanceName) - 1:
+        SelectedDistance += 1
+    else:
+        SelectedDistance = 0
+    DistanceString.set("Dist [" + DistanceName[SelectedDistance] + "]")
+    LblStartDist.config(text=DistanceString.get())
+
+
+def ParseDistance(UserInput : str) -> np.float64:
+  SpaceIndex = UserInput.find(' ')
+  if SpaceIndex < 0:
+    return np.nan
+  Number = np.float64(UserInput[0:SpaceIndex])
+  try:
+    Unit = DistanceUnits2Meters[DistanceName[SelectedDistance]]
+  except KeyError:
+    return np.nan
+  return Number * Unit
+
+def ParseAngle(UserInput : str) -> np.float64:
+  SpaceIndex = UserInput.find(' ')
+  if SpaceIndex < 0:
+    return np.nan
+  Number = np.float64(UserInput[0:SpaceIndex])
+  try:
+    Unit = Angle2RadConverter[Anglename[0]]
+  except KeyError:
+    return np.nan
+  return Number * Unit
 
 def LoadDb():
     ErrorCode: int = DbManager.C_EXC_NO_ERROR
@@ -97,7 +142,7 @@ def Inverse_Imp():
         messagebox.showerror(title="Invalid method",
                              message="Method " + Method + " not supported ATM")
         return
-    TxtStartDist.insert(0, str("{:.2f}".format(Route.OrthoDistance / 1000)) + " km")
+    TxtStartDist.insert(0, str("{:.2f}".format(Route.OrthoDistance / DistanceUnits2Meters[DistanceName[SelectedDistance]])))
     TxtStartBear.insert(0, str("{:.2f}".format(math.degrees(Route.FwdAz))) + "°")
     TxtFinalAz.insert(0, str("{:.2f}".format(math.degrees(Route.BackAz))) + "°")
 
@@ -109,15 +154,13 @@ def Direct_Imp():
     try:
         Origin.Latitude = math.radians(float(TxtStartLat.get()))
         Origin.Longitude = math.radians(float(TxtStartLon.get()))
-        Route.FwdAz = Geodesy.ParseAngle(TxtStartBear.get())
-        Route.OrthoDistance = Geodesy.ParseDistance(TxtStartDist.get())
+        Route.FwdAz = ParseAngle(TxtStartBear.get())
+        Route.OrthoDistance = ParseDistance(TxtStartDist.get())
         if Route.OrthoDistance != Route.OrthoDistance or Route.FwdAz != Route.FwdAz:
             raise ValueError
     except ValueError:
-        messagebox.showerror(
-            title="Direct distance",
-            message="Check origin point and route information"
-        )
+        messagebox.showerror(title="Direct distance",
+                             message="Check origin point and route information")
         return
     Method = ListBoxMethod.get()
     if Method == ComputationMethodsList[0]:  # Vincenty
@@ -225,11 +268,14 @@ SearchIcon = tkinter.PhotoImage(file="./icons/search.png")
 SearchIcon = SearchIcon.subsample(x=3, y=3)
 LoadDbIcon = tkinter.PhotoImage(file="./icons/database.png")
 LoadDbIcon = LoadDbIcon.subsample(x=3, y=3)
+ChangeIcon = tkinter.PhotoImage(file="./icons/ChangeUnits.png")
+ChangeIcon = ChangeIcon.subsample(x=3, y=3)
 
 VhfCount = tkinter.IntVar(value=0)
 AptCount = tkinter.IntVar(value=0)
 NdbCount = tkinter.IntVar(value=0)
 Dbname = tkinter.StringVar(value="Database Name")
+DistanceString = tkinter.StringVar(value="Dist [" + DistanceName[SelectedDistance] + "]")
 
 FrameDbInfo = tkinter.LabelFrame(
     master=home, text=Dbname.get(), font=DefaultFontTuple)
@@ -256,65 +302,42 @@ LblDbAptCount = tkinter.Label(
 )
 LblDbAptCount.grid(row=0, column=2)
 
-CmdLoadDb = tkinter.Button(
-    master=home,
-    text="Load",
-    font=DefaultFontTuple,
-    command=LoadDb,
-    image=LoadDbIcon,
-    compound=tkinter.LEFT,
-)
+CmdChangeUnits = tkinter.Button(master=home, text="Change", image=ChangeIcon, command=CycleUnits)
+CmdChangeUnits.grid(row=0,column=4)
+
+CmdLoadDb = tkinter.Button(master=home, text="Load", font=DefaultFontTuple,
+                           command=LoadDb, image=LoadDbIcon, compound=tkinter.LEFT)
 CmdLoadDb.grid(row=0, column=3)
 
-FrameStart = tkinter.LabelFrame(
-    master=home, text="Starting Point", font=DefaultFontTuple
-)
+FrameStart = tkinter.LabelFrame(master=home, text="Starting Point", font=DefaultFontTuple)
 FrameStart.grid(row=1, column=0, rowspan=2, padx=padValue, pady=padValue)
-LblStartLat = tkinter.Label(
-    master=FrameStart, text="Latitude", font=DefaultFontTuple)
+LblStartLat = tkinter.Label(master=FrameStart, text="Latitude", font=DefaultFontTuple)
 LblStartLat.grid(row=0, column=0, columnspan=2)
 TxtStartLat = tkinter.Entry(master=FrameStart, width=20, font=NumericFontTuple)
 TxtStartLat.grid(row=1, column=0, columnspan=2)
-LblStartLon = tkinter.Label(
-    master=FrameStart, text="Longitude", font=DefaultFontTuple)
+LblStartLon = tkinter.Label(master=FrameStart, text="Longitude", font=DefaultFontTuple)
 LblStartLon.grid(row=2, column=0, columnspan=2)
 TxtStartLon = tkinter.Entry(master=FrameStart, width=20, font=NumericFontTuple)
 TxtStartLon.grid(row=3, column=0, columnspan=2)
 
-FrameRoute = tkinter.LabelFrame(
-    master=home, text="Orthodromic route", font=DefaultFontTuple
-)
+FrameRoute = tkinter.LabelFrame(master=home, text="Orthodromic route", font=DefaultFontTuple)
 FrameRoute.grid(row=1, column=1, columnspan=2, padx=padValue, pady=padValue)
-LblStartBear = tkinter.Label(
-    master=FrameRoute, text="Fwd. Az.", font=DefaultFontTuple)
+LblStartBear = tkinter.Label(master=FrameRoute, text="Fwd. Az.", font=DefaultFontTuple)
 LblStartBear.grid(row=0, column=0, columnspan=1)
-TxtStartBear = tkinter.Entry(
-    master=FrameRoute, width=CentralWidth, font=NumericFontTuple
-)
+TxtStartBear = tkinter.Entry(master=FrameRoute, width=CentralWidth, font=NumericFontTuple)
 TxtStartBear.grid(row=1, column=0, columnspan=1)
-LblFinalAz = tkinter.Label(
-    master=FrameRoute, text="Fin. Az.", font=DefaultFontTuple)
+LblFinalAz = tkinter.Label(master=FrameRoute, text="Fin. Az.", font=DefaultFontTuple)
 LblFinalAz.grid(row=0, column=1, columnspan=1)
-TxtFinalAz = tkinter.Entry(
-    master=FrameRoute, width=CentralWidth, font=NumericFontTuple)
+TxtFinalAz = tkinter.Entry(master=FrameRoute, width=CentralWidth, font=NumericFontTuple)
 TxtFinalAz.grid(row=1, column=1, columnspan=1)
-LblStartDist = tkinter.Label(
-    master=FrameRoute, text="Distance", font=DefaultFontTuple)
+LblStartDist = tkinter.Label(master=FrameRoute, text=DistanceString.get(), font=DefaultFontTuple)
 LblStartDist.grid(row=2, column=0, columnspan=1)
-TxtStartDist = tkinter.Entry(
-    master=FrameRoute, width=CentralWidth, font=NumericFontTuple
-)
+TxtStartDist = tkinter.Entry(master=FrameRoute, width=CentralWidth, font=NumericFontTuple)
 TxtStartDist.grid(row=3, column=0, columnspan=1)
-LblMethod = tkinter.Label(
-    master=FrameRoute, text="Method", font=DefaultFontTuple)
+LblMethod = tkinter.Label(master=FrameRoute, text="Method", font=DefaultFontTuple)
 LblMethod.grid(row=2, column=1)
-ListBoxMethod = ttk.Combobox(
-    master=FrameRoute,
-    font=DefaultFontTuple,
-    state="readonly",
-    width=CentralWidth,
-    justify="center",
-)
+ListBoxMethod = ttk.Combobox(master=FrameRoute, font=DefaultFontTuple, state="readonly",
+                             width=CentralWidth, justify="center")
 ListBoxMethod["values"] = ComputationMethodsList
 ListBoxMethod.current(0)
 ListBoxMethod.grid(row=3, column=1)
