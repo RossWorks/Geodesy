@@ -112,7 +112,6 @@ def InverseSodano(OriginPoint: Point, DestinationPoint: Point) -> Route:
     DeltaLon = DestinationPoint.Longitude - OriginPoint.Longitude
     DeltaLat = DestinationPoint.Latitude - OriginPoint.Latitude
     ArcIsMerid = np.abs(OriginPoint.Longitude - DestinationPoint.Longitude) < 1e-6
-    Take_tan : bool = False
     if DeltaLon > np.pi:
         DeltaLon += -2 * np.pi * np.sign(DeltaLon)
     if np.absolute(OriginPoint.Latitude) <= (np.pi / 4):
@@ -156,22 +155,16 @@ def InverseSodano(OriginPoint: Point, DestinationPoint: Point) -> Route:
     k1 += a * (-f2 / 2 * sin_phi - f2 * phi2 * np.power(sin_phi, -1))
     k1 += m * (-1.25*f2*phi + f2/4*sin_phi*cos_phi + f2*phi2*np.power(np.tan(phi), -1))
     lam = k1 * c + DeltaLon
-    cot_a12 = (sin_beta2 * cos_beta1 - np.cos(lam) * sin_beta1 * cos_beta2) / (np.sin(lam) * cos_beta2)
-    cot_a21 = (sin_beta2 * cos_beta1 * np.cos(lam) - sin_beta1 * cos_beta2) / (np.sin(lam) * cos_beta1)
-    alpha12 = np.arctan(np.power(cot_a12, -1)) # if np.abs(cot_a12) <= 1 else np.arctan(cot_a12)
-    alpha21 = np.arctan(np.power(cot_a21, -1)) # if np.abs(cot_a21) <= 1 else np.arctan(cot_a21)
+    alpha12 = np.atan2(np.sin(lam) * cos_beta2, sin_beta2 * cos_beta1 - np.cos(lam) * sin_beta1 * cos_beta2)
+    alpha21 = np.atan2(np.sin(lam) * cos_beta1, sin_beta2 * cos_beta1 * np.cos(lam) - sin_beta1 * cos_beta2)
     output.OrthoDistance = S_bo * SemiMinorAxis
     if ArcIsMerid:
-      output.FwdAz = 0.0 if DeltaLat >= 0 else np.pi
+      output.FwdAz  = 0.0 if DeltaLat >= 0 else np.pi
       output.BackAz = 0.0 if DeltaLat >= 0 else np.pi
-    else: # applied weird selection of right angle via a 180° flip... weird, but seems to be working
-      if DeltaLat < 0:
-         alpha12 -= np.pi if DeltaLon >= 0 else -np.pi
-         alpha21 -= np.pi if DeltaLon >= 0 else -np.pi
-      output.FwdAz = np.mod(alpha12 + 2*np.pi, 2*np.pi)
-      output.BackAz = np.mod(alpha21, 2*np.pi)
+    else:
+      output.FwdAz  = np.mod(alpha12 + 2*np.pi, 2*np.pi)
+      output.BackAz = np.mod(alpha21 + 2*np.pi, 2*np.pi)
     return output
-
 
 def DirectSodano(OriginPoint: Point, Route: Route) -> Point:
     output = Point()
