@@ -42,10 +42,7 @@ def CycleUnits():
 
 
 def ParseDistance(UserInput : str) -> np.float64:
-  SpaceIndex = UserInput.find(' ')
-  if SpaceIndex < 0:
-    return np.nan
-  Number = np.float64(UserInput[0:SpaceIndex])
+  Number = np.float64(UserInput)
   try:
     Unit = DistanceUnits2Meters[DistanceName[SelectedDistance]]
   except KeyError:
@@ -53,10 +50,7 @@ def ParseDistance(UserInput : str) -> np.float64:
   return Number * Unit
 
 def ParseAngle(UserInput : str) -> np.float64:
-  SpaceIndex = UserInput.find(' ')
-  if SpaceIndex < 0:
-    return np.nan
-  Number = np.float64(UserInput[0:SpaceIndex])
+  Number = np.float64(UserInput)
   try:
     Unit = Angle2RadConverter[Anglename[0]]
   except KeyError:
@@ -201,9 +195,7 @@ def SearchPoint():
         MultipleSel = tkinter.Toplevel(master=home)
         MultipleSel.grab_set()
         global SearchResultBox
-        SearchResultBox = tkinter.Listbox(
-            master=MultipleSel, selectmode="single", font=DefaultFontTuple
-        )
+        SearchResultBox = tkinter.Listbox(master=MultipleSel, selectmode="single", font=DefaultFontTuple)
         for item in SearchResult:
             SearchResultBox.insert(tkinter.END, item.ICAO + "|" + item.Region)
         SearchResultBox.grid(row=0, column=0)
@@ -238,9 +230,7 @@ def SearchPoint2():
         MultipleSel = tkinter.Toplevel(master=home)
         MultipleSel.grab_set()
         global SearchResultBox
-        SearchResultBox = tkinter.Listbox(
-            master=MultipleSel, selectmode="single", font=DefaultFontTuple
-        )
+        SearchResultBox = tkinter.Listbox(master=MultipleSel, selectmode="single", font=DefaultFontTuple)
         for item in SearchResult2:
             SearchResultBox.insert(tkinter.END, item.ICAO + "|" + item.Region)
         SearchResultBox.grid(row=0, column=0)
